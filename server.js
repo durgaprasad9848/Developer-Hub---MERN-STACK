@@ -3,10 +3,13 @@ const devuser = require('./devusermodel');
 const jwt = require('jsonwebtoken');
 const app = express();
 const middleware = require('./middleware');
-
+const reviewmodel = require('./reviewmodel');
+const cors = require('cors');
 const mongoose = require('mongoose');
 
 app.use(express.json());
+app.use(cors({origin:'*'}));
+
 
 app.get('/',(req,res)=>{
     return res.send("Hello Worldaaaaaaaaaaaaaaa ");
@@ -85,6 +88,37 @@ app.get('/myprofile',middleware,async(req,res)=>{
     }
 })
 
+
+
+app.get('/addreview',middleware,async(req,res)=>{
+    try{
+        const {taskworker,rating} = req.body;
+        const exist = await devuser.findById(req.user.id);
+        const newReview = new reviewmodel({
+            taskprovider : exist.fullname,
+            taskworker,rating
+        })
+        newReview.save();
+        return res.status(200).send('Review updated Successfully');
+    }
+    catch(err){
+        console.log(err);
+        return res.status(500).send('Server Error');
+    }
+})
+
+
+app.get('/myreview',middleware,async(req,res)=>{
+    try{
+        let allreviews = await reviewmodel.find();
+        let myreviews = allreviews.filter(review => review.taskworker.toString() === req.user.id.toString() );
+        return res.status(200).json(myreviews);
+    }
+    catch(err){
+        console.log(err);
+        return res.status(500).send('Server Error');
+    }
+})
  
 mongoose.connect('mongodb+srv://kanakadurgaprasadp:Prasad123@prasad.mqb92v4.mongodb.net/Node-API?retryWrites=true&w=majority').then(()=>{
     console.log("Connected to DB");
